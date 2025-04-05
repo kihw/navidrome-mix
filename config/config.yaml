@@ -1,0 +1,70 @@
+# Configuration du service Navidrome Mix
+
+# Connexion à Navidrome
+navidrome:
+  url: http://navidrome:4533
+  api_path: /rest
+  username: admin
+  password: password
+  poll_interval: 60  # Intervalle de récupération des données d'écoute en secondes
+
+# Paramètres du service
+service:
+  port: 8085
+  host: 0.0.0.0
+  log_level: info
+  cors:
+    enabled: true
+    allowed_origins:
+      - http://localhost:8086
+      - http://navidrome-mix-ui
+
+# Base de données
+database:
+  uri: neo4j://navidrome-mix-db:7687
+  username: neo4j
+  password: navidrome-mix
+
+# Algorithme de recommandation
+recommender:
+  # Configuration générale
+  similarity_threshold: 0.6  # Seuil minimum pour considérer deux pistes comme similaires
+  max_tracks_per_playlist: 25  # Nombre maximum de pistes par playlist générée
+  
+  # Ratios pour le mélange des différentes sources de recommandation
+  weights:
+    history: 0.5       # Basé sur l'historique d'écoute
+    content: 0.3       # Basé sur les caractéristiques audio
+    collaborative: 0.2 # Basé sur les comportements similaires d'autres utilisateurs
+  
+  # Configuration de la diversité
+  diversity:
+    artist_max_tracks: 3  # Nombre maximum de pistes du même artiste
+    genre_distribution:   # Distribution des genres dans une playlist
+      primary: 0.6        # Genre principal
+      secondary: 0.3      # Genres secondaires
+      discovery: 0.1      # Genres rarement écoutés
+    time_weights:         # Poids selon la période d'écoute
+      recent: 0.7         # Écoutes récentes (7 derniers jours)
+      medium: 0.2         # Écoutes moyennes (30 derniers jours)
+      old: 0.1            # Écoutes anciennes (plus de 30 jours)
+
+# Services externes pour l'enrichissement des métadonnées
+external_services:
+  musicbrainz:
+    enabled: true
+    rate_limit: 1  # Requêtes par seconde
+  
+  lastfm:
+    enabled: false
+    api_key: ""
+    api_secret: ""
+    
+  acousticbrainz:
+    enabled: false
+
+# Cache
+cache:
+  enabled: true
+  ttl: 86400  # Durée de vie du cache en secondes (24h)
+  size: 1000  # Nombre maximum d'entrées en cache
