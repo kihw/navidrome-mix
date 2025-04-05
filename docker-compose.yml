@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Service principal Navidrome Mix
+  navidrome-mix:
+    build:
+      context: .
+      dockerfile: docker/service/Dockerfile
+    container_name: navidrome-mix
+    restart: unless-stopped
+    environment:
+      - NAVIDROME_URL=http://navidrome:4533
+      - NAVIDROME_USER=admin
+      - NAVIDROME_PASSWORD=password
+      - DB_URI=neo4j://navidrome-mix-db:7687
+      - DB_USER=neo4j
+      - DB_PASSWORD=navidrome-mix
+      - LOG_LEVEL=info
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./config:/app/config
+    depends_on:
+      - navidrome-mix-db
+    networks:
+      - navidrome-network
+
+  # Base de données Neo4j pour les recommandations
+  navidrome-mix-db:
+    image: neo4j:5.13-community
+    container_name: navidrome-mix-db
+    restart: unless-stopped
+    environment:
+      - NEO4J_AUTH=neo4j/navidrome-mix
+      - NEO4J_dbms_memory_heap_initial__size=512m
+      - NEO4J_dbms_memory_heap_max__size=1G
+    volumes:
+      - navidrome-mix-data:/data
+      - navidrome-mix-logs:/logs
+    ports:
+      - "7474:7474"  # Interface Web Neo4j
+      - "7687:7687"  # Bolt protocol
+    networks:
+      - navidrome-network
+
+  # Interface utilisateur Navidrome Mix
+  navidrome-mix-ui:
+    build:
+      context: ./ui
+      dockerfile: ../docker/ui/Dockerfile
+    container_name: navidrome-mix-ui
+    restart: unless-stopped
+    ports:
+      - "8086:80"
+    environment:
+      - API_URL=http://navidrome-mix:8085
+    depends_on:
+      - navidrome-mix
+    networks:
+      - navidrome-network
+
+networks:
+  navidrome-network:
+    external: true  # Se connecter au réseau existant de Navidrome
+
+volumes:
+  navidrome-mix-data:
+  navidrome-mix-logs:
